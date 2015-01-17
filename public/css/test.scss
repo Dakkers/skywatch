@@ -4,8 +4,11 @@ body {
 
 .landing-title {
 	padding-top: 70px;
+    padding-bottom: 70px;
 	text-align: center;
 	font-size: 50pt;
+    margin: 20px;
+    background-color: #0000ff
 	//font-family: 
 }
 .landing-search {
@@ -17,4 +20,10 @@ body {
 }
 .signup{
 	float: right;
+}
+
+.event-content {
+    padding: 10px;
+    text-align: center;
+    background-color: #000ff0
 }
