@@ -4,7 +4,7 @@ block head-extensions
 
 block content
   include content-grid
-  .page-header
+  //.page-header
   .container-fluid
     .row
       .col-md-3
@@ -16,7 +16,7 @@ block content
       .col-md-6 
         input.form-control(type='text' placeholder="Search")
       .col-md-3
-    .row
+    .row.landing-update
       .col-md-3
       .col-md-3 
         a.btn.btn-default.signup(href='/signup') Sign Up
@@ -26,8 +26,6 @@ block content
 
     //- Current Updates
     .row
-      .col-md-3
-
-    +contents(['3:40AM','Jupiter is up today aaaaaaaaaaaaaaaaaaa'])
-    +contents(['12:00PM','Perseids meteor shower'])
-    +contents(['11:12PM','Lunar Eclipse'])
+      +contents(['3:40AM','Jupiter is up today aaaaaaaaaaaaaaaaaaa'])
+      +contents(['12:00PM','Perseids meteor shower'])
+      +contents(['11:12PM','Lunar Eclipse'])

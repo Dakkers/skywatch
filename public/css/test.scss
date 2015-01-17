@@ -1,4 +1,9 @@
+body {
+	background-color: #333399;
+}
+
 .landing-title {
+	padding-top: 70px;
 	text-align: center;
 	font-size: 50pt;
 	//font-family: 
@@ -7,6 +12,9 @@
 	padding-bottom: 20px;
 }
 
+.landing-update {
+	padding-bottom: 20px;
+}
 .signup{
 	float: right;
 }
