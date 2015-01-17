@@ -131,10 +131,10 @@ app.post('/account/delete', passportConf.isAuthenticated, userController.postDel
 app.get('/account/unlink/:provider', passportConf.isAuthenticated, userController.getOauthUnlink);
 
 // TEST PAGE
-app.get('/test', function(req, res) {
+/*app.get('/test', function(req, res) {
   res.render('test');
 });
-
+*/
 app.get('/email-verification/:URL', function(req, res) {
     var url = req.params.URL;
 
