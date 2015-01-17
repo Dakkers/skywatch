@@ -130,6 +130,11 @@ app.post('/account/password', passportConf.isAuthenticated, userController.postU
 app.post('/account/delete', passportConf.isAuthenticated, userController.postDeleteAccount);
 app.get('/account/unlink/:provider', passportConf.isAuthenticated, userController.getOauthUnlink);
 
+// TEST PAGE
+app.get('/test', function(req, res) {
+  res.render('test');
+});
+
 app.get('/email-verification/:URL', function(req, res) {
     var url = req.params.URL;
 
