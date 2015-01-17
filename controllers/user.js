@@ -5,6 +5,7 @@ var nodemailer = require('nodemailer');
 var passport = require('passport');
 var User = require('../models/User');
 var secrets = require('../config/secrets');
+var nev = require('email-verification');
 
 /**
  * GET /login
@@ -89,6 +90,21 @@ exports.postSignup = function(req, res, next) {
     password: req.body.password
   });
 
+  nev.createTempUser(user, function(newTempUser) {
+    // new user created
+    if (newTempUser) {
+      nev.registerTempUser(newTempUser);
+      req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
+      res.redirect('/login');
+
+    // user already exists in temporary collection!
+    } else {
+      res.json({msg: 'You have already signed up. Please check your email to verify your account.'});
+    }
+  });
+
+
+  /*
   User.findOne({ email: req.body.email }, function(err, existingUser) {
     if (existingUser) {
       req.flash('errors', { msg: 'Account with that email address already exists.' });
@@ -102,6 +118,7 @@ exports.postSignup = function(req, res, next) {
       });
     });
   });
+  */
 };
 
 /**
