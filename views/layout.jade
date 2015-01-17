@@ -7,6 +7,8 @@ html
     meta(name='csrf-token', content=_csrf)
     title #{title} - Hackathon Starter
     != css('main')
+    block head-extensions
+      
   body
     include partials/navbar
 
