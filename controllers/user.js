@@ -71,12 +71,14 @@ exports.getSignup = function(req, res) {
  * Create a new local account.
  */
 exports.postSignup = function(req, res, next) {
+  // uses express-validator middleware
   req.assert('email', 'Email is not valid').isEmail();
   req.assert('password', 'Password must be at least 4 characters long').len(4);
   req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
 
   var errors = req.validationErrors();
 
+  // if email or password isn't legit...
   if (errors) {
     req.flash('errors', errors);
     return res.redirect('/signup');
