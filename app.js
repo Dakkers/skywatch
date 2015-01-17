@@ -10,7 +10,7 @@ var logger = require('morgan');
 var errorHandler = require('errorhandler');
 var lusca = require('lusca');
 var methodOverride = require('method-override');
-var multer  = require('multer')
+var multer  = require('multer');
 
 var _ = require('lodash');
 var MongoStore = require('connect-mongo')(session);
@@ -20,6 +20,31 @@ var mongoose = require('mongoose');
 var passport = require('passport');
 var expressValidator = require('express-validator');
 var connectAssets = require('connect-assets');
+var nev = require('email-verification');
+
+var User = require('./models/User');
+
+/**
+ * API keys and Passport configuration.
+ */
+var secrets = require('./config/secrets');
+var passportConf = require('./config/passport');
+
+/* configuration for email-verification */
+nev.configure({
+    persistentUserModel: User,
+
+    verificationURL: 'http://localhost:3000/email-verification/${URL}',
+    transportOptions: {
+        service: 'Gmail',
+        auth: {
+            user: secrets.email.user,
+            pass: secrets.email.pass
+        }
+    },
+});
+
+nev.generateTempUserModel(User);
 
 /**
  * Controllers (route handlers).
@@ -29,11 +54,6 @@ var userController = require('./controllers/user');
 var apiController = require('./controllers/api');
 var contactController = require('./controllers/contact');
 
-/**
- * API keys and Passport configuration.
- */
-var secrets = require('./config/secrets');
-var passportConf = require('./config/passport');
 
 /**
  * Create Express server.
@@ -109,6 +129,18 @@ app.post('/account/profile', passportConf.isAuthenticated, userController.postUp
 app.post('/account/password', passportConf.isAuthenticated, userController.postUpdatePassword);
 app.post('/account/delete', passportConf.isAuthenticated, userController.postDeleteAccount);
 app.get('/account/unlink/:provider', passportConf.isAuthenticated, userController.getOauthUnlink);
+
+app.get('/email-verification/:URL', function(req, res) {
+    var url = req.params.URL;
+
+    nev.confirmTempUser(url, function(userFound) {
+        if (userFound) {
+            setTimeout(function() {
+                res.redirect('/');
+            }, 5000);
+        }
+    });
+});
 
 /**
  * API examples routes.
