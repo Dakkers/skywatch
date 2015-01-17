@@ -1,5 +1,26 @@
 extends layout
+block head-extensions
+	!= css('test')
 
 block content
-  .page-header
-    h3 Test Form
+	.page-header
+	.container-fluid
+		.row
+			.col-md-3
+			.col-md-6 
+				h1.landing-title Sky Events
+			.col-md-3
+		.row
+			.col-md-3
+			.col-md-6 
+				input.form-control(type='text' placeholder="Search")
+			.col-md-3
+		.row
+			.col-md-3
+			.col-md-3 
+				a.btn.btn-default.signup(href='/signup') Sign Up
+			.col-md-3
+				a.btn.btn-default.login(href='/login') Log In
+			.col-md-3
+		h3 Test Form
+		p sadfsdaf
