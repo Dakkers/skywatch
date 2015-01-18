@@ -1,12 +1,29 @@
+body {
+	background-color: #333399;
+}
+
 .landing-title {
+	padding-top: 70px;
+    padding-bottom: 70px;
 	text-align: center;
 	font-size: 50pt;
+    margin: 20px;
+    background-color: #0000ff
 	//font-family: 
 }
 .landing-search {
 	padding-bottom: 20px;
 }
 
+.landing-update {
+	padding-bottom: 20px;
+}
 .signup{
 	float: right;
+}
+
+.event-content {
+    padding: 10px;
+    text-align: center;
+    background-color: #000ff0
 }

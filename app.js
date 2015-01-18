@@ -130,9 +130,8 @@ app.post('/account/password', passportConf.isAuthenticated, userController.postU
 app.post('/account/delete', passportConf.isAuthenticated, userController.postDeleteAccount);
 app.get('/account/unlink/:provider', passportConf.isAuthenticated, userController.getOauthUnlink);
 
-// TEST PAGE
-app.get('/test', function(req, res) {
-  res.render('test');
+app.get('/events', function(req, res) {
+  res.render('events');
 });
 
 app.get('/email-verification/:URL', function(req, res) {
@@ -150,7 +149,7 @@ app.get('/email-verification/:URL', function(req, res) {
 /**
  * API examples routes.
  */
-app.get('/api', apiController.getApi);
+/*app.get('/api', apiController.getApi);
 app.get('/api/twilio', apiController.getTwilio);
 app.post('/api/twilio', apiController.postTwilio);
 app.get('/api/facebook', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.getFacebook);
@@ -161,7 +160,7 @@ app.post('/api/venmo', passportConf.isAuthenticated, passportConf.isAuthorized, 
 app.get('/api/paypal', apiController.getPayPal);
 app.get('/api/paypal/success', apiController.getPayPalSuccess);
 app.get('/api/paypal/cancel', apiController.getPayPalCancel);
-
+*/
 /**
  * OAuth authentication routes. (Sign in)
  */
