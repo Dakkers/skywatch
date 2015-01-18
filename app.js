@@ -34,7 +34,7 @@ var passportConf = require('./config/passport');
 nev.configure({
     persistentUserModel: User,
 
-    verificationURL: 'http://localhost:3000/email-verification/${URL}',
+    verificationURL: 'http://skywatch.me/email-verification/${URL}',
     transportOptions: {
         service: 'Gmail',
         auth: {
