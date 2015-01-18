@@ -8,7 +8,8 @@ var userSchema = new mongoose.Schema({
   phone: { type: String, unique: true },
 
   events: {type: Array, default: [{'event': 'meteors'}, {'event': 'solar_eclipses'}, {'event': 'lunar_eclipses'}]},
-  notifications: {type: Array, default: ['1 hour']}
+  notifications: {type: Array, default: ['1 hour']},
+  methods: {type: Array, default: ['email']}
 });
 
 /**
