@@ -20,4 +20,4 @@ node_modules
 .DS_Store
 Thumbs.db
 
-./config/secrets.js
+config/secrets.js

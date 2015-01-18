@@ -1,0 +1,37 @@
+body {
+  background-color: #333399;
+  color: white;
+  margin: 0 auto;
+  width: 90%; }
+
+.landing-title {
+  padding-top: 70px;
+  padding-bottom: 70px;
+  text-align: center; }
+  .landing-title h1 {
+    font-weight: 100;
+    font-size: 50pt; }
+  .landing-title p {
+    font-weight: 100;
+    font-size: 32pt;
+    margin-top: 20px; }
+
+.landing-search {
+  padding-bottom: 20px; }
+
+.landing-update {
+  padding-bottom: 20px; }
+
+.signup {
+  float: right; }
+
+.event-content {
+  padding: 10px;
+  text-align: center;
+  background-color: #fff; }
+
+.vertical-align {
+  display: flex;
+  align-items: center; }
+
+/*# sourceMappingURL=test.css.map */

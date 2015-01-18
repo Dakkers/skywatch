@@ -10,9 +10,10 @@
         span.ion-cube
         | Sky Watch
     .collapse.navbar-collapse
-      ul.nav.navbar-nav
-        li(class=title=='Upcoming Events'?'active':undefined)
-          a(href='/events') Upcoming Events
+      //-
+        ul.nav.navbar-nav
+          li(class=title=='Upcoming Events'?'active':undefined)
+            a(href='/events') Upcoming Events
       ul.nav.navbar-nav.navbar-right
         if !user
           li(class=title=='Login'?'active':undefined)
@@ -22,7 +23,7 @@
         else
           li.dropdown(class=title=='Account Management'?'active':undefined)
             a.dropdown-toggle(href='#', data-toggle='dropdown')
-              | #{user.profile.name || user.email || user.id}&nbsp;
+              | #{user.email}&nbsp;
               i.caret
             ul.dropdown-menu
               li

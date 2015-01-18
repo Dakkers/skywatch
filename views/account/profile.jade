@@ -22,43 +22,75 @@ block content
 
   .page-header
     h3 Change Subscription Settings
-    p This is where you can change what kinds of events you receive notifications for.
+    p This is where you can change what kinds of events you receive notifications for, as well as the time for when you receive them.
 
-  form.form-horizontal(action='/account/notifications', method='POST')
+  form.form-horizontal(action='/account/notifications/events', method='POST')
     input(type='hidden', name='_csrf', value=_csrf)
+    h4.col-sm-offset-1 Types of Events
     .form-group
       .col-md-offset-1.col-md-8
         .checkbox.checkbox-inline
-          input(type='checkbox', id='meteors', value='meteors', checked)
+          input(type='checkbox', name='meteors', id='meteors', value='true', checked)
           label(for='meteors') Meteor Showers
         .checkbox.checkbox-inline
-          input(type='checkbox', id='solar-eclipses', value='solar-eclipses', checked)
+          input(type='checkbox', name='solar_eclipses', id='solar-eclipses', value='true', checked)
           label(for='solar-eclipses') Solar Eclipses
         .checkbox.checkbox-inline
-          input(type='checkbox', id='lunar-eclipses', value='lunar-eclipses', checked)
+          input(type='checkbox', name='lunar_eclipses', id='lunar-eclipses', value='true', checked)
           label(for='lunar-eclipses') Lunar Eclipses
+    .form-group
+      .col-sm-offset-2.col-sm-4
+        button.btn.btn.btn-primary(type='submit')
+          span.ion-edit
+          | Update Events
+  form.form-horizontal(action='/account/notifications/timing', method='POST')        
+    h4.col-sm-offset-1 Timing of Notifications
+    .form-group
+      .col-md-offset-1.col-md-8
+        .checkbox.checkbox-inline
+          input(type='checkbox', name='24h', id='24h', value='true')
+          label(for='24h') 24 hours
+        .checkbox.checkbox-inline
+          input(type='checkbox', name='12h', id='12h', value='true')
+          label(for='12h') 12 hours
+        .checkbox.checkbox-inline
+          input(type='checkbox', name='6h', id='6h', value='true')
+          label(for='6h') 6 hours
+        .checkbox.checkbox-inline
+          input(type='checkbox', name='3h', id='3h', value='true')
+          label(for='3h') 3 hours
+        .checkbox.checkbox-inline
+          input(type='checkbox', name='1h', id='1h', value='true' checked)
+          label(for='1h') 1 hour
 
+    .form-group
+      .col-sm-offset-2.col-sm-4
+        button.btn.btn.btn-primary(type='submit')
+          span.ion-edit
+          | Update Timing
 
+  
   .page-header
     h3 Change Password
 
   form.form-horizontal(action='/account/password', method='POST')
     input(type='hidden', name='_csrf', value=_csrf)
+    //-
+      .form-group
+        label.col-sm-3.control-label(for='oldPassword') Current Password
+        .col-sm-4
+          input.form-control(type='password', name='oldPassword', id='oldPassword')
     .form-group
-      label.col-sm-3.control-label(for='oldPassword') Current Password
-      .col-sm-4
-        input.form-control(type='password', name='oldPassword', id='oldPassword')
-    .form-group
-      label.col-sm-3.control-label(for='password') New Password
+      label.col-sm-2.control-label(for='password') New Password
       .col-sm-4
         input.form-control(type='password', name='password', id='password')
     .form-group
-      label.col-sm-3.control-label(for='confirmPassword') Confirm Password
+      label.col-sm-2.control-label(for='confirmPassword') Confirm Password
       .col-sm-4
         input.form-control(type='password', name='confirmPassword', id='confirmPassword')
     .form-group
-      .col-sm-offset-3.col-sm-4
-        button.btn.btn.btn-primary(type='submit')
+      .col-sm-offset-2.col-sm-4
+        button.btn.btn.btn-primary(type='submit', style="background-color: #42ff23;")
           span.ion-locked
           | Change Password
 
@@ -67,9 +99,10 @@ block content
     p You can delete your account, but keep in mind this action is irreversible.
   form(action='/account/delete', method='POST')
     input(type='hidden', name='_csrf', value=_csrf)
-    button.btn.btn-danger(type='submit')
-      span.ion-trash-b
-      | Delete my account
+    .col-sm-offset-2
+      button.btn.btn-danger(type='submit')
+        span.ion-trash-b
+        | Delete my account
 
   //-
     .page-header

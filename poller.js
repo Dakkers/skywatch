@@ -1,13 +1,20 @@
 var secrets = require('./config/secrets');
 var mongoose = require('mongoose'),
     moment   = require('moment'),
-    sendgrid = require('sendgrid')(secrets.sendgrid.user, secrets.sendgrid.password);
+    sendgrid = require('sendgrid')(secrets.sendgrid.user, secrets.sendgrid.password),
+    twiliocli = require('twilio')(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 var Event = require('./models/Event'),
     User = require('./models/User');
 mongoose.connect(secrets.db);
 mongoose.connection.on('error', function() {
   console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
 });
+
+var eventMapper = {
+    'meteors': 'meteor shower',
+    'lunar_eclipse': 'lunar eclipse',
+    'solar_eclipse': 'solar eclipse'
+};
 
 var times = ['24 hours', '12 hours', '6 hours', '3 hours', '1 hour', '3 minutes', '2 minutes', '1 minute'];
 
@@ -41,7 +48,7 @@ Event.find().exec(function(err, events) {
                     var email = new sendgrid.Email({
                         from: 'notifications@skywatch.me',
                         subject: ev.category + ' happening in ' + time,
-                        text: 'There\'s a ' + ev.category + ' happening in ' + time + ' that you should definitely check out!'
+                        text: 'There\'s a ' + eventMapper[ev.category] + ' happening in ' + time + ' that you should definitely check out!'
                     });
 
                     // find all users that are subscribed to this category
@@ -53,8 +60,13 @@ Event.find().exec(function(err, events) {
                                 if (user.notifications.indexOf(time) !== -1) {
                                     if (user.methods.indexOf('email') !== -1)
                                         email.addTo(user.email);
-                                    if (user.methods.indexOf('sms') !== -1)
-                                        console.log('should text');
+                                    if (user.methods.indexOf('sms') !== -1) {
+                                        twiliocli.sendMessage({
+                                            to: user.phone,
+                                            from: '+12268940949',
+                                            body: 'There\'s a ' + eventMapper[ev.category] + ' happening in ' + time + ' that you should definitely check out!'
+                                        },          function(err, data) {});
+                                    }
                                 }
                             });
                             sendgrid.send(email, function(err, json) {

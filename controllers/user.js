@@ -41,7 +41,6 @@ exports.postLogin = function(req, res, next) {
     }
     req.logIn(user, function(err) {
       if (err) return next(err);
-      req.flash('success', { msg: 'Success! You are logged in.' });
       res.redirect(req.session.returnTo || '/');
     });
   })(req, res, next);
@@ -102,23 +101,6 @@ exports.postSignup = function(req, res, next) {
       res.json({msg: 'You have already signed up. Please check your email to verify your account.'});
     }
   });
-
-
-  /*
-  User.findOne({ email: req.body.email }, function(err, existingUser) {
-    if (existingUser) {
-      req.flash('errors', { msg: 'Account with that email address already exists.' });
-      return res.redirect('/signup');
-    }
-    user.save(function(err) {
-      if (err) return next(err);
-      req.logIn(user, function(err) {
-        if (err) return next(err);
-        res.redirect('/');
-      });
-    });
-  });
-  */
 };
 
 /**
@@ -139,10 +121,7 @@ exports.postUpdateProfile = function(req, res, next) {
   User.findById(req.user.id, function(err, user) {
     if (err) return next(err);
     user.email = req.body.email || '';
-    user.profile.name = req.body.name || '';
-    user.profile.gender = req.body.gender || '';
-    user.profile.location = req.body.location || '';
-    user.profile.website = req.body.website || '';
+    user.phone = req.body.phone || '';
 
     user.save(function(err) {
       if (err) return next(err);
@@ -152,11 +131,54 @@ exports.postUpdateProfile = function(req, res, next) {
   });
 };
 
+exports.postUpdateEvents = function(req, res, next) {
+  User.findById(req.user.id, function(err, user) {
+    if (err) return next(err);
+    var events = [];
+    
+    for (var ev in req.body) {
+      if (ev != '_csrf')
+        types.push({'event': ev});
+    }
+
+    user.events = events;
+    user.save(function(err) {
+      if (err) return next(err);
+      req.flash('success', {msg: 'Event settings updated.'});
+      res.redirect('/account');
+    });
+  });
+};
+
+exports.postUpdateTiming = function(req,res,next) {
+  User.findById(req.user.id, function(err,user) {
+    if (err) return next(err);
+    var times = [];
+
+    for (var time in req.body) {
+      if (time != '_csrf')
+        times.push(time);
+    }
+
+    user.notifications = times;
+    user.save(function(err) {
+      if(err) return next(err);
+      req.flash('success', {msg: 'Timing settings updated.'});
+      res.redirect('/account');
+    });
+
+  });
+};
+
 /**
  * POST /account/password
  * Update current password.
  */
 exports.postUpdatePassword = function(req, res, next) {
+  // User.findById(req.user.id, function(err,user) {
+  //   if (err) return next(err);
+  //   req.assert('oldPassword', 'Incorrect (old) password.').equals(user.password);
+  // });
   req.assert('password', 'Password must be at least 4 characters long').len(4);
   req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
 
