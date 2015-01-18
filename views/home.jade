@@ -3,6 +3,7 @@ block head-extensions
   != css('test')
 
 block content
+  include content-grid
   .page-header
   .container-fluid
     .row
@@ -10,7 +11,7 @@ block content
       .col-md-6 
         h1.landing-title Sky Events
       .col-md-3
-    .row
+    .row.landing-search
       .col-md-3
       .col-md-6 
         input.form-control(type='text' placeholder="Search")
@@ -22,5 +23,11 @@ block content
       .col-md-3
         a.btn.btn-default.login(href='/login') Log In
       .col-md-3
-    h3 Test Form
-    p sadfsdaf
+
+    //- Current Updates
+    .row
+      .col-md-3
+
+    +contents(['3:40AM','Jupiter is up today aaaaaaaaaaaaaaaaaaa'])
+    +contents(['12:00PM','Perseids meteor shower'])
+    +contents(['11:12PM','Lunar Eclipse'])
