@@ -6,6 +6,7 @@
 @import "vendors/bootstrap";
 @import "vendors/bootstrap-social";
 @import "vendors/font-awesome";
+@import "vendors/bootstrap-awesome-checkbox";
 @import "vendors/ionicons";
 
 @import "themes/modern/styles";
@@ -62,4 +63,9 @@ footer {
 .fa,
 [class^="ion-"] {
   margin-right: 5px;
+}
+
+
+input[type=checkbox] {
+  outline: 1px solid black
 }

@@ -10,29 +10,33 @@ block content
       label.col-sm-2.control-label(for='email') Email
       .col-sm-4
         input.form-control(type='email', name='email', id='email', value='#{user.email}')
-    //-      
-      .form-group
-        label.col-sm-2.control-label(for='location') Location
-        .col-sm-4
-          input.form-control(type='text', name='location', id='location', value='#{user.profile.location}')
-    //-.row
+    .form-group
+      label.col-sm-2.control-label(for='phone') Phone
       .col-sm-4
-        .input-group
-          span.input-group-addon
-            input(type='checkbox', aria-label='...')
-          input.form-control(type='text', aria-label='...')
-      .col-sm-4
-        .input-group
-          span.input-group-addon
-            input(type='radio', aria-label='...')
-          input.form-control(type='text', aria-label='...')
+        input.form-control(type='phone', name='phone', id='phone', value='#{user.phone}')
     .form-group
       .col-sm-offset-2.col-sm-4
         button.btn.btn.btn-primary(type='submit')
           span.ion-edit
           | Update Profile
 
-  form.form-horizontal(action='/account/')
+  .page-header
+    h3 Change Subscription Settings
+    p This is where you can change what kinds of events you receive notifications for.
+
+  form.form-horizontal(action='/account/notifications', method='POST')
+    input(type='hidden', name='_csrf', value=_csrf)
+    .form-group
+      .col-md-offset-1.col-md-8
+        .checkbox.checkbox-inline
+          input(type='checkbox', id='meteors', value='meteors', checked)
+          label(for='meteors') Meteor Showers
+        .checkbox.checkbox-inline
+          input(type='checkbox', id='solar-eclipses', value='solar-eclipses', checked)
+          label(for='solar-eclipses') Solar Eclipses
+        .checkbox.checkbox-inline
+          input(type='checkbox', id='lunar-eclipses', value='lunar-eclipses', checked)
+          label(for='lunar-eclipses') Lunar Eclipses
 
 
   .page-header
@@ -60,8 +64,7 @@ block content
 
   .page-header
     h3 Delete Account
-
-  p You can delete your account, but keep in mind this action is irreversible.
+    p You can delete your account, but keep in mind this action is irreversible.
   form(action='/account/delete', method='POST')
     input(type='hidden', name='_csrf', value=_csrf)
     button.btn.btn-danger(type='submit')
