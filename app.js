@@ -1,6 +1,3 @@
-/**
- * Module dependencies.
- */
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var compress = require('compression');
@@ -24,17 +21,16 @@ var nev = require('email-verification');
 
 var User = require('./models/User');
 
-/**
- * API keys and Passport configuration.
- */
+// secret stuff!
 var secrets = require('./config/secrets');
 var passportConf = require('./config/passport');
 
-/* configuration for email-verification */
+
+// configuration for email-verification
 nev.configure({
     persistentUserModel: User,
 
-    verificationURL: 'http://skywatch.me/email-verification/${URL}',
+    verificationURL: 'http://localhost:5000/email-verification/${URL}',
     transportOptions: {
         service: 'Gmail',
         auth: {
@@ -46,31 +42,18 @@ nev.configure({
 
 nev.generateTempUserModel(User);
 
-/**
- * Controllers (route handlers).
- */
-var homeController = require('./controllers/home');
+// route handlers
 var userController = require('./controllers/user');
 var apiController = require('./controllers/api');
-var contactController = require('./controllers/contact');
 
-
-/**
- * Create Express server.
- */
+// configuration of sorts
 var app = express();
 
-/**
- * Connect to MongoDB.
- */
 mongoose.connect(secrets.db);
 mongoose.connection.on('error', function() {
   console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
 });
 
-/**
- * Express configuration.
- */
 app.set('port', process.env.PORT || 5000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -109,10 +92,11 @@ app.use(function(req, res, next) {
 });
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
 
-/**
- * Primary app routes.
- */
-app.get('/', homeController.index);
+
+// ROUTING ============================================
+app.get('/', function(req, res) {
+  res.render('home', {title: 'Skywatch (Beta)'});
+});
 app.get('/login', userController.getLogin);
 app.post('/login', userController.postLogin);
 app.get('/logout', userController.logout);
@@ -122,8 +106,6 @@ app.get('/reset/:token', userController.getReset);
 app.post('/reset/:token', userController.postReset);
 app.get('/signup', userController.getSignup);
 app.post('/signup', userController.postSignup);
-app.get('/contact', contactController.getContact);
-app.post('/contact', contactController.postContact);
 app.get('/account', passportConf.isAuthenticated, userController.getAccount);
 app.post('/account/profile', passportConf.isAuthenticated, userController.postUpdateProfile);
 app.post('/account/notifications/events', passportConf.isAuthenticated, userController.postUpdateEvents);
@@ -137,13 +119,11 @@ app.get('/events', function(req, res) {
 });
 
 app.get('/email-verification/:URL', function(req, res) {
-    var url = req.params.URL;
-
-    nev.confirmTempUser(url, function(userFound) {
+    nev.confirmTempUser(req.params.URL, function(userFound) {
         if (userFound) {
             setTimeout(function() {
                 res.redirect('/login');
-            }, 5000);
+            }, 500);
         }
     });
 });
@@ -163,9 +143,7 @@ app.get('/api/paypal', apiController.getPayPal);
 app.get('/api/paypal/success', apiController.getPayPalSuccess);
 app.get('/api/paypal/cancel', apiController.getPayPalCancel);
 */
-/**
- * OAuth authentication routes. (Sign in)
- */
+// oauth for signin
 app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'user_location'] }));
 app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), function(req, res) {
   res.redirect(req.session.returnTo || '/');
@@ -175,22 +153,16 @@ app.get('/auth/twitter/callback', passport.authenticate('twitter', { failureRedi
   res.redirect(req.session.returnTo || '/');
 });
 
-/**
- * OAuth authorization routes. (API examples)
- */
+// oauth for APIs
 app.get('/auth/venmo', passport.authorize('venmo', { scope: 'make_payments access_profile access_balance access_email access_phone' }));
 app.get('/auth/venmo/callback', passport.authorize('venmo', { failureRedirect: '/api' }), function(req, res) {
   res.redirect('/api/venmo');
 });
 
-/**
- * Error Handler.
- */
+// error handler
 app.use(errorHandler());
 
-/**
- * Start Express server.
- */
+
 app.listen(app.get('port'), function() {
   console.log('Express server listening on port %d in %s mode', app.get('port'), app.get('env'));
 });

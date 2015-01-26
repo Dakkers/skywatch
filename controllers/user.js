@@ -7,21 +7,14 @@ var User = require('../models/User');
 var secrets = require('../config/secrets');
 var nev = require('email-verification');
 
-/**
- * GET /login
- * Login page.
- */
+// GET login page
 exports.getLogin = function(req, res) {
-  if (req.user) return res.redirect('/');
-  res.render('account/login', {
-    title: 'Login'
-  });
+  if (req.user) 
+    return res.redirect('/');
+  res.render('account/login', {title: 'Login'});
 };
 
-/**
- * POST /login
- * Sign in using email and password.
- */
+// POST login (login attempt)
 exports.postLogin = function(req, res, next) {
   req.assert('email', 'Email is not valid').isEmail();
   req.assert('password', 'Password cannot be blank').notEmpty();
@@ -60,10 +53,9 @@ exports.logout = function(req, res) {
  * Signup page.
  */
 exports.getSignup = function(req, res) {
-  if (req.user) return res.redirect('/');
-  res.render('account/signup', {
-    title: 'Create Account'
-  });
+  if (req.user) 
+    return res.redirect('/');
+  res.render('account/signup', {title: 'Create Account'});
 };
 
 /**
@@ -92,13 +84,14 @@ exports.postSignup = function(req, res, next) {
   nev.createTempUser(user, function(newTempUser) {
     // new user created
     if (newTempUser) {
+      newTempUser.password = newTempUser.generateHash(newTempUser.password);
       nev.registerTempUser(newTempUser);
       req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
       res.redirect('/login');
 
     // user already exists in temporary collection!
     } else {
-      res.json({msg: 'You have already signed up. Please check your email to verify your account.'});
+      req.flash('errors', {msg: 'You have already signed up. Please check your email to verify your account.'});
     }
   });
 };
@@ -108,9 +101,7 @@ exports.postSignup = function(req, res, next) {
  * Profile page.
  */
 exports.getAccount = function(req, res) {
-  res.render('account/profile', {
-    title: 'Account Management'
-  });
+  res.render('account/profile', {title: 'Account Management'});
 };
 
 /**
@@ -119,12 +110,14 @@ exports.getAccount = function(req, res) {
  */
 exports.postUpdateProfile = function(req, res, next) {
   User.findById(req.user.id, function(err, user) {
-    if (err) return next(err);
+    if (err) 
+      return next(err);
     user.email = req.body.email || '';
     user.phone = req.body.phone || '';
 
     user.save(function(err) {
-      if (err) return next(err);
+      if (err) 
+        return next(err);
       req.flash('success', { msg: 'Profile information updated.' });
       res.redirect('/account');
     });
@@ -152,7 +145,8 @@ exports.postUpdateEvents = function(req, res, next) {
 
 exports.postUpdateTiming = function(req,res,next) {
   User.findById(req.user.id, function(err,user) {
-    if (err) return next(err);
+    if (err) 
+      return next(err);
     var times = [];
 
     for (var time in req.body) {
@@ -162,11 +156,11 @@ exports.postUpdateTiming = function(req,res,next) {
 
     user.notifications = times;
     user.save(function(err) {
-      if(err) return next(err);
+      if (err) 
+        return next(err);
       req.flash('success', {msg: 'Timing settings updated.'});
       res.redirect('/account');
     });
-
   });
 };
 
