@@ -120,13 +120,16 @@ app.get('/events', function(req, res) {
 });
 
 // move user from temporary collection to persistent collection
-app.get('/email-verification/:URL', function(req, res) {
-  nev.confirmTempUser(req.params.URL, function(userFound) {
-    if (userFound) {
-      setTimeout(function() {
-        req.flash('success', {msg: 'Your account has been verified. You can now log in.'}); 
-        res.redirect('/login');
-      }, 500);
+app.get('/email-verification/:URL', function(req, res, next) {
+  nev.confirmTempUser(req.params.URL, function(user) {
+    if (user) {
+      req.logIn(user, function(err) {
+        if (err)
+          return next(err);
+        req.flash('success', {msg: 'Your account has been verified.'});
+        res.redirect('/account');
+      });
+
     } else {
       req.flash('errors', {msg: 'Your verification code has expired. Please sign up again.'});
       res.redirect('/signup');
