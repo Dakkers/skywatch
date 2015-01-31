@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 var userSchema = new mongoose.Schema({
   email: { type: String, unique: true, lowercase: true },
   password: String,
-  phone: { type: String, unique: true, default: '' },
+  phone: { type: String, default: '' },
 
   events: {type: Array, default: [{'event': 'meteors'}, {'event': 'solar_eclipses'}, {'event': 'lunar_eclipses'}]},
   notifications: {type: Array, default: ['1 hour']},

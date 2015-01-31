@@ -27,16 +27,18 @@ var passportConf = require('./config/passport');
 
 // configuration for email-verification
 nev.configure({
-    persistentUserModel: User,
+  persistentUserModel: User,
 
-    verificationURL: 'http://localhost:5000/email-verification/${URL}',
-    transportOptions: {
-        service: 'Gmail',
-        auth: {
-            user: secrets.email.user,
-            pass: secrets.email.pass
-        }
-    },
+  verificationURL: 'http://localhost:5000/email-verification/${URL}',
+  transportOptions: {
+    service: 'Gmail',
+    auth: {
+      user: secrets.email.user,
+      pass: secrets.email.pass
+    }
+  },
+
+  sendConfirmationEmail: false
 });
 
 nev.generateTempUserModel(User);
@@ -85,7 +87,8 @@ app.use(function(req, res, next) {
   next();
 });
 app.use(function(req, res, next) {
-  if (/api/i.test(req.path)) req.session.returnTo = req.path;
+  if (/api/i.test(req.path)) 
+    req.session.returnTo = req.path;
   next();
 });
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
@@ -116,14 +119,19 @@ app.get('/events', function(req, res) {
   res.render('events');
 });
 
+// move user from temporary collection to persistent collection
 app.get('/email-verification/:URL', function(req, res) {
-    nev.confirmTempUser(req.params.URL, function(userFound) {
-        if (userFound) {
-            setTimeout(function() {
-                res.redirect('/login');
-            }, 500);
-        }
-    });
+  nev.confirmTempUser(req.params.URL, function(userFound) {
+    if (userFound) {
+      setTimeout(function() {
+        req.flash('success', {msg: 'Your account has been verified. You can now log in.'}); 
+        res.redirect('/login');
+      }, 500);
+    } else {
+      req.flash('errors', {msg: 'Your verification code has expired. Please sign up again.'});
+      res.redirect('/signup');
+    }
+  });
 });
 
 /**

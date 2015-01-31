@@ -82,7 +82,9 @@ exports.postSignup = function(req, res, next) {
 
     // user already exists in temporary collection!
     } else {
+      console.log('NOPE');
       req.flash('errors', {msg: 'You have already signed up. Please check your email to verify your account.'});
+      res.redirect('/signup');
     }
   });
 };
