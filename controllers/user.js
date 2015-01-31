@@ -39,29 +39,20 @@ exports.postLogin = function(req, res, next) {
   })(req, res, next);
 };
 
-/**
- * GET /logout
- * Log out.
- */
+// GET logout (attempt logging out)
 exports.logout = function(req, res) {
   req.logout();
   res.redirect('/');
 };
 
-/**
- * GET /signup
- * Signup page.
- */
+// GET signup page
 exports.getSignup = function(req, res) {
   if (req.user) 
     return res.redirect('/');
   res.render('account/signup', {title: 'Create Account'});
 };
 
-/**
- * POST /signup
- * Create a new local account.
- */
+// POST signup (signup attempt)
 exports.postSignup = function(req, res, next) {
   // uses express-validator middleware
   req.assert('email', 'Email is not valid').isEmail();
