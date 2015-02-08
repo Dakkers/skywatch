@@ -7,6 +7,9 @@ var User = require('../models/User');
 var secrets = require('../config/secrets');
 var nev = require('email-verification');
 
+eventLabels = {meteors: 'Meteor Showers', solar_eclipses: 'Solar Eclipses', lunar_eclipses: 'Lunar Eclipses'};
+timeLabels  = {'1h': '1 hour', '3h': '3 hours', '6h': '6 hours', '12h': '12 hours', '24h': '24 hours'};
+
 // GET login page
 exports.getLogin = function(req, res) {
   if (req.user) 
@@ -34,7 +37,7 @@ exports.postLogin = function(req, res, next) {
     }
     req.logIn(user, function(err) {
       if (err) return next(err);
-      res.redirect(req.session.returnTo || '/');
+      res.redirect(req.session.returnTo || '/account');
     });
   })(req, res, next);
 };
@@ -89,12 +92,27 @@ exports.postSignup = function(req, res, next) {
   });
 };
 
-/**
- * GET /account
- * Profile page.
- */
+// GET account page
 exports.getAccount = function(req, res) {
-  res.render('account/profile', {title: 'Account Management'});
+  console.log(req.user.id);
+  User.findById(req.user.id, function(err, user) {
+    var events = {},
+      notifs   = {};
+    user.events.forEach(function(ev) {
+      events[ev.event] = true;
+    });
+    user.notifications.forEach(function(t) {
+      notifs[t] = true;
+    });
+
+    res.render('account/profile', {
+      events: events,
+      eventLabels: eventLabels,
+      timeLabels: timeLabels,
+      notifs: notifs,
+      methods: user.methods
+    });
+  });
 };
 
 /**
@@ -124,7 +142,7 @@ exports.postUpdateEvents = function(req, res, next) {
     
     for (var ev in req.body) {
       if (ev != '_csrf')
-        types.push({'event': ev});
+        events.push({'event': ev});
     }
 
     user.events = events;

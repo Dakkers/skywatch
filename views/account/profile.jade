@@ -1,5 +1,10 @@
 extends ../layout
 
+mixin itemCheckbox(itemName, check, itemLabel)
+  .checkbox.checkbox-inline
+    input(type='checkbox', name=itemName, id=itemName, value='true', checked=(check ? "checked" : undefined))
+    label(for='meteors')!= itemLabel
+
 block content
   .page-header
     h3 Profile Information
@@ -29,40 +34,20 @@ block content
     h4.col-sm-offset-1 Types of Events
     .form-group
       .col-md-offset-1.col-md-8
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='meteors', id='meteors', value='true', checked)
-          label(for='meteors') Meteor Showers
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='solar_eclipses', id='solar-eclipses', value='true', checked)
-          label(for='solar-eclipses') Solar Eclipses
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='lunar_eclipses', id='lunar-eclipses', value='true', checked)
-          label(for='lunar-eclipses') Lunar Eclipses
+        for label,ev in eventLabels
+          +itemCheckbox(ev, events[ev], label)
     .form-group
       .col-sm-offset-2.col-sm-4
         button.btn.btn.btn-primary(type='submit')
           span.ion-edit
           | Update Events
-  form.form-horizontal(action='/account/notifications/timing', method='POST')        
+  form.form-horizontal(action='/account/notifications/timing', method='POST')
+    input(type='hidden', name='_csrf', value=_csrf)
     h4.col-sm-offset-1 Timing of Notifications
     .form-group
       .col-md-offset-1.col-md-8
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='24h', id='24h', value='true')
-          label(for='24h') 24 hours
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='12h', id='12h', value='true')
-          label(for='12h') 12 hours
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='6h', id='6h', value='true')
-          label(for='6h') 6 hours
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='3h', id='3h', value='true')
-          label(for='3h') 3 hours
-        .checkbox.checkbox-inline
-          input(type='checkbox', name='1h', id='1h', value='true' checked)
-          label(for='1h') 1 hour
-
+        for label,t in timeLabels
+          +itemCheckbox(t, notifs[t], label)
     .form-group
       .col-sm-offset-2.col-sm-4
         button.btn.btn.btn-primary(type='submit')
