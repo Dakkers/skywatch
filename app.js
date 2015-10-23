@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var compress = require('compression');
@@ -87,8 +89,9 @@ app.use(function(req, res, next) {
   next();
 });
 app.use(function(req, res, next) {
-  if (/api/i.test(req.path)) 
+  if (/api/i.test(req.path)) {
     req.session.returnTo = req.path;
+  }
   next();
 });
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
@@ -124,8 +127,9 @@ app.get('/email-verification/:URL', function(req, res, next) {
   nev.confirmTempUser(req.params.URL, function(user) {
     if (user) {
       req.logIn(user, function(err) {
-        if (err)
+        if (err) {
           return next(err);
+        }
         req.flash('success', {msg: 'Your account has been verified.'});
         res.redirect('/account');
       });
