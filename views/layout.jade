@@ -6,6 +6,7 @@ html
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
     meta(name='csrf-token', content=_csrf)
     title Skywatch (Beta)
+    link(href='/bower_components/bootstrap/dist/css/bootstrap.css' rel='stylesheet')
     != css('main')
     block head-extensions
       
@@ -16,4 +17,6 @@ html
       include partials/flash
       block content
 
+    script(src='/bower_components/jquery/dist/jquery.min.js')
+    script(src='/bower_components/bootstrap/dist/js/bootstrap.min.js')
     != js('application')

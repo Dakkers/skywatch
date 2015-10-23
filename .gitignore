@@ -21,3 +21,4 @@ node_modules
 Thumbs.db
 
 config/secrets.js
+public/bower_components
