@@ -1,6 +1,5 @@
 var _ = require('lodash');
 var passport = require('passport');
-var InstagramStrategy = require('passport-instagram').Strategy;
 var LocalStrategy = require('passport-local').Strategy;
 var OAuthStrategy = require('passport-oauth').OAuthStrategy;
 var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
@@ -53,6 +52,7 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, function(email, passw
 /**
  * Venmo API OAuth.
  */
+/*
 passport.use('venmo', new OAuth2Strategy({
     authorizationURL: 'https://api.venmo.com/v1/oauth/authorize',
     tokenURL: 'https://api.venmo.com/v1/oauth/access_token',
@@ -70,6 +70,7 @@ passport.use('venmo', new OAuth2Strategy({
     });
   }
 ));
+*/
 
 /**
  * Login Required middleware.
