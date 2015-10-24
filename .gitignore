@@ -20,5 +20,5 @@ node_modules
 .DS_Store
 Thumbs.db
 
-config/secrets.js
+app/config/secrets.js
 public/bower_components

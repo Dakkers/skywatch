@@ -45,8 +45,8 @@ nev.configure({
 nev.generateTempUserModel(User);
 
 // route handlers
-var userController = require('./controllers/user');
-var apiController = require('./controllers/api');
+var userController = require('./routes/userController');
+var apiController = require('./routes/apiController');
 
 // configuration of sorts
 var app = express();
@@ -61,7 +61,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(compress());
 app.use(connectAssets({
-  paths: [path.join(__dirname, 'public/css'), path.join(__dirname, 'public/js')]
+  paths: [path.join(__dirname, '../public/css'), path.join(__dirname, '../public/js')]
 }));
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -93,7 +93,7 @@ app.use(function(req, res, next) {
   }
   next();
 });
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
+app.use(express.static(path.join(__dirname, '../public'), { maxAge: 31557600000 }));
 
 
 // ROUTING ============================================
