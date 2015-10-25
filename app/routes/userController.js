@@ -1,3 +1,4 @@
+var express = require('express');
 var _ = require('lodash');
 var async = require('async');
 var crypto = require('crypto');
@@ -5,20 +6,21 @@ var nodemailer = require('nodemailer');
 var passport = require('passport');
 var User = require('../models/User');
 var secrets = require('../config/secrets');
-var nev = require('email-verification');
 
 eventLabels = {meteors: 'Meteor Showers', solar_eclipses: 'Solar Eclipses', lunar_eclipses: 'Lunar Eclipses'};
 timeLabels  = {'1h': '1 hour', '3h': '3 hours', '6h': '6 hours', '12h': '12 hours', '24h': '24 hours'};
 
+module.exports = function(app, nev) {
+
 // GET login page
-exports.getLogin = function(req, res) {
+app.get('/login', function(req, res) {
   if (req.user) 
     return res.redirect('/');
   res.render('account/login', {title: 'Login'});
-};
+});
 
 // POST login (login attempt)
-exports.postLogin = function(req, res, next) {
+app.post('/login', function(req, res, next) {
   req.assert('email', 'Email is not valid').isEmail();
   req.assert('password', 'Password cannot be blank').notEmpty();
 
@@ -40,23 +42,23 @@ exports.postLogin = function(req, res, next) {
       res.redirect(req.session.returnTo || '/account');
     });
   })(req, res, next);
-};
+});
 
 // GET logout (attempt logging out)
-exports.logout = function(req, res) {
+app.get('/logout', function(req, res) {
   req.logout();
   res.redirect('/');
-};
+});
 
 // GET signup page
-exports.getSignup = function(req, res) {
+app.get('/signup', function(req, res) {
   if (req.user) 
     return res.redirect('/');
   res.render('account/signup', {title: 'Create Account'});
-};
+});
 
 // POST signup (signup attempt)
-exports.postSignup = function(req, res, next) {
+app.post('/signup', function(req, res, next) {
   // uses express-validator middleware
   req.assert('email', 'Email is not valid').isEmail();
   req.assert('password', 'Password must be at least 4 characters long').len(4);
@@ -75,25 +77,25 @@ exports.postSignup = function(req, res, next) {
     password: req.body.password
   });
 
-  nev.createTempUser(user, function(newTempUser) {
+  nev.createTempUser(user, function(err, newTempUser) {
     // new user created
     if (newTempUser) {
       newTempUser.password = newTempUser.generateHash(newTempUser.password);
-      nev.registerTempUser(newTempUser);
-      req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
-      res.redirect('/login');
+      nev.registerTempUser(newTempUser, function(err) {
+        req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
+        res.redirect('/login');
+      });
 
     // user already exists in temporary collection!
     } else {
-      console.log('NOPE');
       req.flash('errors', {msg: 'You have already signed up. Please check your email to verify your account.'});
       res.redirect('/signup');
     }
   });
-};
+});
 
 // GET account page
-exports.getAccount = function(req, res) {
+app.get('/account', function(req, res) {
   console.log(req.user.id);
   User.findById(req.user.id, function(err, user) {
     var events = {},
@@ -113,13 +115,13 @@ exports.getAccount = function(req, res) {
       methods: user.methods
     });
   });
-};
+});
 
 /**
  * POST /account/profile
  * Update profile information.
  */
-exports.postUpdateProfile = function(req, res, next) {
+app.post('/account/profile', function(req, res, next) {
   User.findById(req.user.id, function(err, user) {
     if (err) 
       return next(err);
@@ -133,9 +135,9 @@ exports.postUpdateProfile = function(req, res, next) {
       res.redirect('/account');
     });
   });
-};
+});
 
-exports.postUpdateEvents = function(req, res, next) {
+app.post('/account/notifications/events', function(req, res, next) {
   User.findById(req.user.id, function(err, user) {
     if (err) return next(err);
     var events = [];
@@ -152,9 +154,9 @@ exports.postUpdateEvents = function(req, res, next) {
       res.redirect('/account');
     });
   });
-};
+});
 
-exports.postUpdateTiming = function(req,res,next) {
+app.post('/account/notifications/timing', function(req,res,next) {
   User.findById(req.user.id, function(err,user) {
     if (err) 
       return next(err);
@@ -173,13 +175,13 @@ exports.postUpdateTiming = function(req,res,next) {
       res.redirect('/account');
     });
   });
-};
+});
 
 /**
  * POST /account/password
  * Update current password.
  */
-exports.postUpdatePassword = function(req, res, next) {
+app.post('/account/password', function(req, res, next) {
   // User.findById(req.user.id, function(err,user) {
   //   if (err) return next(err);
   //   req.assert('oldPassword', 'Incorrect (old) password.').equals(user.password);
@@ -205,26 +207,26 @@ exports.postUpdatePassword = function(req, res, next) {
       res.redirect('/account');
     });
   });
-};
+});
 
 /**
  * POST /account/delete
  * Delete user account.
  */
-exports.postDeleteAccount = function(req, res, next) {
+app.post('/account/delete', function(req, res, next) {
   User.remove({ _id: req.user.id }, function(err) {
     if (err) return next(err);
     req.logout();
     req.flash('info', { msg: 'Your account has been deleted.' });
     res.redirect('/');
   });
-};
+});
 
 /**
  * GET /account/unlink/:provider
  * Unlink OAuth provider.
  */
-exports.getOauthUnlink = function(req, res, next) {
+app.get('/account/unlink/:provider', function(req, res, next) {
   var provider = req.params.provider;
   User.findById(req.user.id, function(err, user) {
     if (err) return next(err);
@@ -238,13 +240,13 @@ exports.getOauthUnlink = function(req, res, next) {
       res.redirect('/account');
     });
   });
-};
+});
 
 /**
  * GET /reset/:token
  * Reset Password page.
  */
-exports.getReset = function(req, res) {
+app.get('/reset/:token', function(req, res) {
   if (req.isAuthenticated()) {
     return res.redirect('/');
   }
@@ -260,13 +262,13 @@ exports.getReset = function(req, res) {
         title: 'Password Reset'
       });
     });
-};
+});
 
 /**
  * POST /reset/:token
  * Process the reset password request.
  */
-exports.postReset = function(req, res, next) {
+app.post('/reset/:token', function(req, res, next) {
   req.assert('password', 'Password must be at least 4 characters long.').len(4);
   req.assert('confirm', 'Passwords must match.').equals(req.body.password);
 
@@ -324,26 +326,26 @@ exports.postReset = function(req, res, next) {
     if (err) return next(err);
     res.redirect('/');
   });
-};
+});
 
 /**
  * GET /forgot
  * Forgot Password page.
  */
-exports.getForgot = function(req, res) {
+app.get('/forgot', function(req, res) {
   if (req.isAuthenticated()) {
     return res.redirect('/');
   }
   res.render('account/forgot', {
     title: 'Forgot Password'
   });
-};
+});
 
 /**
  * POST /forgot
  * Create a random token, then the send user an email with a reset link.
  */
-exports.postForgot = function(req, res, next) {
+app.post('/forgot', function(req, res, next) {
   req.assert('email', 'Please enter a valid email address.').isEmail();
 
   var errors = req.validationErrors();
@@ -401,4 +403,7 @@ exports.postForgot = function(req, res, next) {
     if (err) return next(err);
     res.redirect('/forgot');
   });
-};
+});
+
+
+}; // end of module.exports
