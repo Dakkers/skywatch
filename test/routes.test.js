@@ -1,4 +1,5 @@
 var assert = require('assert');
+var async = require('async');
 var cheerio = require('cheerio');
 var request = require('supertest');
 var app = require('./../app/server');
@@ -36,6 +37,9 @@ describe('sending GET requests', function() {
 
 describe('sending POST requests', function() {
 
+  var userEmail = 'd.h.stlaurent@gmail.com',
+    userPass = '1234';
+
   /**
    * Tests signing up a user by sending a post request with user info, checking to see if
    * it was added to the temporary collection, and then moving it to the permanent
@@ -43,19 +47,43 @@ describe('sending POST requests', function() {
    */
   describe('signing up a user', function() {
 
-    var userEmail = 'd.h.stlaurent@gmail.com',
-      nev, URL;
+    var nev, URL;
 
-    before(function(done) {
-      nev = app.get('nev');
-      nev.options.tempUserModel.findOne({
-        email: userEmail
-      }, function(err, user) {
-        if (user) {
-          user.remove(done);
-        } else {
-          done(err);
+    var removeTempUser = function(callback) {
+      nev.options.tempUserModel.findOne({email: userEmail}, function(err, user) {
+        if (err) {
+          return callback(err);
         }
+
+        if (user) {
+          user.remove(callback(null));
+        } else {
+          callback(null);
+        }
+      });
+    };
+
+    var removePermUser = function(callback) {
+      User.findOne({email: userEmail}, function(err, user) {
+        if (err) {
+          return callback(err);
+        }
+
+        if (user) {
+          user.remove(callback(null));
+        } else {
+          callback(null);
+        }
+      });
+    }
+
+    before('removing temporary user and permanent user from respective collections', function(done) {
+      nev = app.get('nev');
+      async.series([removeTempUser, removePermUser], function(err) {
+        if (err) {
+          return done(err);
+        }
+        done();
       });
     });
 
@@ -70,8 +98,8 @@ describe('sending POST requests', function() {
             .set('cookie', res.headers['set-cookie'])
             .send({
               email: userEmail,
-              password: '1234',
-              confirmPassword: '1234',
+              password: userPass,
+              confirmPassword: userPass,
               _csrf: token
             })
             .end(function(err, res) {
@@ -85,6 +113,81 @@ describe('sending POST requests', function() {
               }, 2000);
             });
         });
+    });
+
+    it('should move a user from the temporary collection to the permanent one', function(done) {
+      // setTimeout(function() {
+        request(app)
+          .get('/email-verification/' + URL)
+          .end(function(err, res) {
+            if (err) {
+              return done(err);
+            }
+            User.findOne({
+              email: userEmail
+            }, function(err, user) {
+              if (err) {
+                return done(err);
+              }
+              done();
+            });
+          });
+      // }, 2500);
+    });
+
+    after('removing temporary user and permanent user from respective collections', function(done) {
+      async.series([removeTempUser, removePermUser], function(err) {
+        if (err) {
+          return done(err);
+        }
+        done();
+      });
+    });
+  });
+
+  describe('logging in a user', function() {
+    before('adding permanent user to collection', function(done) {
+      User.findOne({email: userEmail}, function(err, user) {
+        if (err) {
+          return done(err);
+        }
+
+        if (user) {
+          user.password = userPass;
+          user.save(done);
+        } else {
+          var newUser = new User({email: userEmail, password: userPass});
+          newUser.save(done);
+        }
+      });
+    });
+
+    it('should log the user in', function(done) {
+      request(app)
+        .get('/login')
+        .end(function(err, res) {
+          var $ = cheerio.load(res.text);
+          var token = $('input[name=_csrf]').val();
+          request(app)
+            .post('/login')
+            .set('cookie', res.headers['set-cookie'])
+            .send({
+              email: userEmail,
+              password: userPass,
+              confirmPassword: userPass,
+              _csrf: token
+            })
+            .expect(302, done);
+        });
+    });
+
+    after('removing permanent user from collection', function(done) {
+      User.findOne({email: userEmail}, function(err, user) {
+        if (err) {
+          return done(err);
+        }
+        user.remove(done);
+      });
     });
   });
 });
