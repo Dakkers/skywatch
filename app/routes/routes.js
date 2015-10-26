@@ -18,7 +18,7 @@ nev.configure({
     }
   },
 
-  sendConfirmationEmail: false
+  shouldSendConfirmation: false
 });
 
 nev.generateTempUserModel(User);
@@ -81,4 +81,6 @@ module.exports = function(app, passport) {
   app.get('/auth/venmo/callback', passport.authorize('venmo', { failureRedirect: '/api' }), function(req, res) {
     res.redirect('/api/venmo');
   });
+
+  app.set('nev', nev);
 }
