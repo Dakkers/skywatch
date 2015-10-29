@@ -1,4 +1,5 @@
-var assert = require('assert');
+'use strict';
+
 var async = require('async');
 var cheerio = require('cheerio');
 var request = require('supertest');
@@ -75,7 +76,7 @@ describe('sending POST requests', function() {
           callback(null);
         }
       });
-    }
+    };
 
     before('removing temporary user and permanent user from respective collections', function(done) {
       nev = app.get('nev');
@@ -102,7 +103,7 @@ describe('sending POST requests', function() {
               confirmPassword: userPass,
               _csrf: token
             })
-            .end(function(err, res) {
+            .end(function() {
               setTimeout(function() {
                 nev.options.tempUserModel.findOne({
                   email: userEmail

@@ -1,3 +1,5 @@
+'use strict';
+
 var mongoose = require('mongoose');
 var nev = require('email-verification')(mongoose);
 var User = require('./../models/User');
@@ -62,8 +64,6 @@ module.exports = function(app, passport) {
   app.get('/api/twilio', apiController.getTwilio);
   app.post('/api/twilio', apiController.postTwilio);
   app.get('/api/facebook', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.getFacebook);
-  app.get('/api/twitter', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.getTwitter);
-  app.post('/api/twitter', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.postTwitter);
   app.get('/api/venmo', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.getVenmo);
   app.post('/api/venmo', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.postVenmo);
   app.get('/api/paypal', apiController.getPayPal);
@@ -83,4 +83,4 @@ module.exports = function(app, passport) {
   });
 
   app.set('nev', nev);
-}
+};

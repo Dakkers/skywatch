@@ -1,16 +1,13 @@
+'use strict';
+
 var secrets = require('../config/secrets');
-var User = require('../models/User');
 var querystring = require('querystring');
 var validator = require('validator');
 var async = require('async');
-var cheerio = require('cheerio');
 var request = require('request');
 var graph = require('fbgraph');
-var Twit = require('twit');
-var ordrin = require('ordrin-api');
 var twilio = require('twilio')(secrets.twilio.sid, secrets.twilio.token);
 var paypal = require('paypal-rest-sdk');
-var Y = require('yui/yql');
 var _ = require('lodash');
 
 /**
@@ -43,58 +40,14 @@ exports.getFacebook = function(req, res, next) {
     }
   },
   function(err, results) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     res.render('api/facebook', {
       title: 'Facebook API',
       me: results.getMe,
       friends: results.getMyFriends
     });
-  });
-};
-
-/**
- * GET /api/twitter
- * Twiter API example.
- */
-exports.getTwitter = function(req, res, next) {
-  var token = _.find(req.user.tokens, { kind: 'twitter' });
-  var T = new Twit({
-    consumer_key: secrets.twitter.consumerKey,
-    consumer_secret: secrets.twitter.consumerSecret,
-    access_token: token.accessToken,
-    access_token_secret: token.tokenSecret
-  });
-  T.get('search/tweets', { q: 'nodejs since:2013-01-01', geocode: '40.71448,-74.00598,5mi', count: 10 }, function(err, reply) {
-    if (err) return next(err);
-    res.render('api/twitter', {
-      title: 'Twitter API',
-      tweets: reply.statuses
-    });
-  });
-};
-
-/**
- * POST /api/twitter
- * Post a tweet.
- */
-exports.postTwitter = function(req, res, next) {
-  req.assert('tweet', 'Tweet cannot be empty.').notEmpty();
-  var errors = req.validationErrors();
-  if (errors) {
-    req.flash('errors', errors);
-    return res.redirect('/api/twitter');
-  }
-  var token = _.find(req.user.tokens, { kind: 'twitter' });
-  var T = new Twit({
-    consumer_key: secrets.twitter.consumerKey,
-    consumer_secret: secrets.twitter.consumerSecret,
-    access_token: token.accessToken,
-    access_token_secret: token.tokenSecret
-  });
-  T.post('statuses/update', { status: req.body.tweet }, function(err, data, response) {
-    if (err) return next(err);
-    req.flash('success', { msg: 'Tweet has been posted.'});
-    res.redirect('/api/twitter');
   });
 };
 
@@ -126,7 +79,9 @@ exports.postTwilio = function(req, res, next) {
     body: req.body.message
   };
   twilio.sendMessage(message, function(err, responseData) {
-    if (err) return next(err.message);
+    if (err) {
+      return next(err.message);
+    }
     req.flash('success', { msg: 'Text sent to ' + responseData.to + '.'});
     res.redirect('/api/twilio');
   });
@@ -153,7 +108,9 @@ exports.getVenmo = function(req, res, next) {
     }
   },
   function(err, results) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     res.render('api/venmo', {
       title: 'Venmo API',
       profile: results.getProfile.data,
@@ -183,14 +140,15 @@ exports.postVenmo = function(req, res, next) {
   };
   if (validator.isEmail(req.body.user)) {
     formData.email = req.body.user;
-  } else if (validator.isNumeric(req.body.user) &&
-    validator.isLength(req.body.user, 10, 11)) {
+  } else if (validator.isNumeric(req.body.user) && validator.isLength(req.body.user, 10, 11)) {
     formData.phone = req.body.user;
   } else {
     formData.user_id = req.body.user;
   }
   request.post('https://api.venmo.com/v1/payments', { form: formData }, function(err, request, body) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     if (request.statusCode !== 200) {
       req.flash('errors', { msg: JSON.parse(body).error.message });
       return res.redirect('/api/venmo');
@@ -232,7 +190,9 @@ exports.getPayPal = function(req, res, next) {
   };
 
   paypal.payment.create(paymentDetails, function(err, payment) {
-    if (err) return next(err);
+    if (err) {
+      return next(err);
+    }
     req.session.paymentId = payment.id;
     var links = payment.links;
     for (var i = 0; i < links.length; i++) {

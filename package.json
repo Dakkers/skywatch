@@ -6,7 +6,10 @@
     "url": "git@github.com:SaintDako/skywatch.git"
   },
   "scripts": {
-    "start": "node app.js",
+    "lint:app": "jshint app/**/*.js",
+    "lint:test": "jshint test/*.js",
+    "lint": "npm run lint:app ; npm run lint:test",
+    "start": "node app/server.js",
     "test": "mocha"
   },
   "dependencies": {
@@ -20,7 +23,7 @@
     "connect-mongo": "^0.8.2",
     "cookie-parser": "^1.4.0",
     "cron": "^1.0.6",
-    "email-verification": "^0.1.6",
+    "email-verification": "^0.2.0",
     "errorhandler": "^1.4.2",
     "express": "^4.13.3",
     "express-flash": "^0.0.2",
@@ -32,7 +35,7 @@
     "method-override": "^2.3.5",
     "moment": "^2.9.0",
     "mongodb": "^2.0.46",
-    "mongoose": "^4.2.2",
+    "mongoose": "~3.8.0",
     "morgan": "^1.6.1",
     "multer": "^1.1.0",
     "node-sass": "^3.3.3",

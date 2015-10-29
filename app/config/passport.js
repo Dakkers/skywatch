@@ -1,3 +1,5 @@
+'use strict';
+
 var _ = require('lodash');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
@@ -21,8 +23,9 @@ passport.deserializeUser(function(id, done) {
 // sign-in using email/password
 passport.use(new LocalStrategy({ usernameField: 'email' }, function(email, password, done) {
   User.findOne({ email: email }, function(err, user) {
-    if (!user)
+    if (!user) {
       return done(null, false, { message: 'Email ' + email + ' not found'});
+    }
 
     user.comparePassword(password, function(err, isMatch) {
       if (isMatch) {
@@ -76,7 +79,9 @@ passport.use('venmo', new OAuth2Strategy({
  * Login Required middleware.
  */
 exports.isAuthenticated = function(req, res, next) {
-  if (req.isAuthenticated()) return next();
+  if (req.isAuthenticated()) {
+    return next();
+  }
   res.redirect('/login');
 };
 
