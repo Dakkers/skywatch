@@ -23,7 +23,7 @@
     "connect-mongo": "^0.8.2",
     "cookie-parser": "^1.4.0",
     "cron": "^1.0.6",
-    "email-verification": "^0.2.0",
+    "email-verification": "^0.3.0",
     "errorhandler": "^1.4.2",
     "express": "^4.13.3",
     "express-flash": "^0.0.2",

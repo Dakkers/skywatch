@@ -1,9 +1,13 @@
 extends ../layout
 
 mixin itemCheckbox(itemName, check, itemLabel)
-  .checkbox.checkbox-inline
-    input(type='checkbox', name=itemName, id=itemName, value='true', checked=(check ? "checked" : undefined))
-    label(for='meteors')!= itemLabel
+  .checkbox.checkbox-primary.checkbox-inline
+    input(class='styled' type='checkbox', name=itemName, id=itemName, value='true', checked=(check ? "checked" : undefined))
+    label(for=itemName)!= itemLabel
+
+block head-extensions
+  link(href='/bower_components/font-awesome/css/font-awesome.css' rel='stylesheet')
+  link(href='/bower_components/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css' rel='stylesheet')
 
 block content
   .page-header
@@ -75,7 +79,7 @@ block content
         input.form-control(type='password', name='confirmPassword', id='confirmPassword')
     .form-group
       .col-sm-offset-2.col-sm-4
-        button.btn.btn.btn-primary(type='submit', style="background-color: #42ff23;")
+        button.btn.btn.btn-info(type='submit')
           span.ion-locked
           | Change Password
 

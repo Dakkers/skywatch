@@ -117,7 +117,6 @@ module.exports = function(app, nev) {
 
   // GET account page
   app.get('/account', function(req, res) {
-    console.log(req.user.id);
     User.findById(req.user.id, function(err, user) {
       var events = {},
         notifs   = {};
