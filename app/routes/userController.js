@@ -124,7 +124,7 @@ module.exports = function(app, nev) {
         events[ev.event] = true;
       });
       user.notifications.forEach(function(t) {
-        notifs[t] = true;
+        notifs[t.time] = true;
       });
 
       res.render('account/profile', {
@@ -159,52 +159,37 @@ module.exports = function(app, nev) {
     });
   });
 
-  app.post('/account/notifications/events', function(req, res, next) {
+  /**
+   * POST /account/notifications
+   * Update event notifications and timing notifications.
+   */
+  app.post('/account/notifications', function(req, res, next) {
     User.findById(req.user.id, function(err, user) {
       if (err) {
         return next(err);
       }
-      var events = [];
+      var events = [],
+        times = [];
       
-      for (var ev in req.body) {
-        if (ev !== '_csrf') {
-          events.push({'event': ev});
-        }
+      for (var ev in req.body.events) {
+        events.push({'event': ev});
+      }
+      for (var time in req.body.times) {
+        times.push({'time': time});
       }
 
       user.events = events;
-      user.save(function(err) {
-        if (err) {
-          return next(err);
-        }
-        req.flash('success', {msg: 'Event settings updated.'});
-        res.redirect('/account');
-      });
-    });
-  });
-
-  app.post('/account/notifications/timing', function(req,res,next) {
-    User.findById(req.user.id, function(err,user) {
-      if (err) {
-        return next(err);
-      }
-      var times = [];
-
-      for (var time in req.body) {
-        if (time !== '_csrf') {
-          times.push(time);
-        }
-      }
-
       user.notifications = times;
+
       user.save(function(err) {
         if (err) {
           return next(err);
         }
-        req.flash('success', {msg: 'Timing settings updated.'});
+        req.flash('success', {msg: 'Notification settings updated.'});
         res.redirect('/account');
       });
     });
+
   });
 
   /**

@@ -31,32 +31,27 @@ block content
 
   .page-header
     h3 Change Subscription Settings
-    p This is where you can change what kinds of events you receive notifications for, as well as the time for when you receive them.
+    p This is where you can change what kinds of events you receive notifications for, as well as the times for when you receive them.
 
-  form.form-horizontal(action='/account/notifications/events', method='POST')
+  form.form-horizontal(action='/account/notifications/', method='POST')
     input(type='hidden', name='_csrf', value=_csrf)
     h4.col-sm-offset-1 Types of Events
     .form-group
       .col-md-offset-1.col-md-8
         for label,ev in eventLabels
-          +itemCheckbox(ev, events[ev], label)
-    .form-group
-      .col-sm-offset-2.col-sm-4
-        button.btn.btn.btn-primary(type='submit')
-          span.ion-edit
-          | Update Events
-  form.form-horizontal(action='/account/notifications/timing', method='POST')
-    input(type='hidden', name='_csrf', value=_csrf)
+          +itemCheckbox('events['+ev+'].', events[ev], label)
+
     h4.col-sm-offset-1 Timing of Notifications
     .form-group
       .col-md-offset-1.col-md-8
         for label,t in timeLabels
-          +itemCheckbox(t, notifs[t], label)
+          +itemCheckbox('times['+t+'].', notifs[t], label)
+
     .form-group
       .col-sm-offset-2.col-sm-4
         button.btn.btn.btn-primary(type='submit')
           span.ion-edit
-          | Update Timing
+          | Update Notifications
 
   
   .page-header
