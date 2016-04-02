@@ -18,11 +18,11 @@ block content
     .form-group
       label.col-sm-2.control-label(for='email') Email
       .col-sm-4
-        input.form-control(type='email', name='email', id='email', value='#{user.email}')
+        //- input.form-control(type='email', name='email', id='email', value='#{user.email}')
     .form-group
       label.col-sm-2.control-label(for='phone') Phone
       .col-sm-4
-        input.form-control(type='phone', name='phone', id='phone', value='#{user.phone}')
+        //- input.form-control(type='phone', name='phone', id='phone', value='#{user.phone}')
     .form-group
       .col-sm-offset-2.col-sm-4
         button.btn.btn.btn-primary(type='submit')
@@ -38,14 +38,14 @@ block content
     h4.col-sm-offset-1 Types of Events
     .form-group
       .col-md-offset-1.col-md-8
-        for label,ev in eventLabels
-          +itemCheckbox('events['+ev+'].', events[ev], label)
+        //- for label,ev in eventLabels
+        //-   +itemCheckbox('events['+ev+'].', events[ev], label)
 
     h4.col-sm-offset-1 Timing of Notifications
     .form-group
       .col-md-offset-1.col-md-8
-        for label,t in timeLabels
-          +itemCheckbox('times['+t+'].', notifs[t], label)
+        //- for label,t in timeLabels
+        //-   +itemCheckbox('times['+t+'].', notifs[t], label)
 
     .form-group
       .col-sm-offset-2.col-sm-4
@@ -53,7 +53,7 @@ block content
           span.ion-edit
           | Update Notifications
 
-  
+
   .page-header
     h3 Change Password
 

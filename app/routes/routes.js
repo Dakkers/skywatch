@@ -4,29 +4,13 @@ var mongoose = require('mongoose');
 var nev = require('email-verification')(mongoose);
 var User = require('./../models/User');
 var secrets = require('./../config/secrets');
-var passportConf = require('./../config/passport');
-var apiController = require('./apiController');
-
-// configuration for email-verification
-nev.configure({
-  persistentUserModel: User,
-
-  verificationURL: 'http://localhost:5000/email-verification/${URL}',
-  transportOptions: {
-    service: 'Gmail',
-    auth: {
-      user: secrets.email.user,
-      pass: secrets.email.pass
-    }
-  },
-
-  shouldSendConfirmation: false
-});
-
-nev.generateTempUserModel(User);
+// var apiController = require('./apiController');
 
 
-module.exports = function(app, passport) {
+module.exports = function(app, passport, db) {
+
+  var passportConf = require('./../config/passport')(passport, db);
+
   app.get('/', function(req, res) {
     res.render('home');
   });
@@ -35,25 +19,12 @@ module.exports = function(app, passport) {
     res.render('events');
   });
 
-  require('./userController')(app, nev);
+  require('./userController')(app, nev, db);
 
   // move user from temporary collection to persistent collection
   app.get('/email-verification/:URL', function(req, res, next) {
-    nev.confirmTempUser(req.params.URL, function(err, user) {
-      console.log(err);
-      if (user) {
-        req.logIn(user, function(err) {
-          if (err) {
-            return next(err);
-          }
-          req.flash('success', {msg: 'Your account has been verified.'});
-          res.redirect('/account');
-        });
-      } else {
-        req.flash('errors', {msg: 'Your verification code has expired. Please sign up again.'});
-        res.redirect('/signup');
-      }
-    });
+
+
   });
 
   /**
@@ -69,7 +40,6 @@ module.exports = function(app, passport) {
   app.get('/api/paypal', apiController.getPayPal);
   app.get('/api/paypal/success', apiController.getPayPalSuccess);
   app.get('/api/paypal/cancel', apiController.getPayPalCancel);
-  */
   // oauth for signin
   app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'user_location'] }));
   app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), function(req, res) {
@@ -81,6 +51,6 @@ module.exports = function(app, passport) {
   app.get('/auth/venmo/callback', passport.authorize('venmo', { failureRedirect: '/api' }), function(req, res) {
     res.redirect('/api/venmo');
   });
+  */
 
-  app.set('nev', nev);
 };

@@ -5,7 +5,7 @@ var async = require('async');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
 var passport = require('passport');
-var User = require('../models/User');
+var UserModel = require('../models/User');
 var secrets = require('../config/secrets');
 
 var eventLabels = {
@@ -22,7 +22,9 @@ var timeLabels  = {
   '24h': '24 hours'
 };
 
-module.exports = function(app, nev) {
+module.exports = function(app, nev, db) {
+
+    var User = UserModel(db);
 
   // GET login page
   app.get('/login', function(req, res) {
@@ -46,7 +48,8 @@ module.exports = function(app, nev) {
 
     passport.authenticate('local', function(err, user, info) {
       if (err) {
-        return next(err);
+        req.flash('errors', {msg: err});
+        return res.redirect('/login');
       }
       if (!user) {
         req.flash('errors', { msg: info.message });
@@ -75,48 +78,72 @@ module.exports = function(app, nev) {
     res.render('account/signup', {title: 'Create Account'});
   });
 
-  // POST signup (signup attempt)
-  app.post('/signup', function(req, res, next) {
-    // uses express-validator middleware
-    req.assert('email', 'Email is not valid').isEmail();
-    req.assert('password', 'Password must be at least 4 characters long').len(4);
-    req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
+    // POST signup (signup attempt)
+    app.post('/signup', function(req, res, next) {
 
-    var errors = req.validationErrors();
+        // uses express-validator middleware
+        req.assert('email', 'Email is not valid').isEmail();
+        req.assert('password', 'Password must be at least 4 characters long').len(4);
+        req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
 
-    // if email or password isn't legit...
-    if (errors) {
-      req.flash('errors', errors);
-      return res.redirect('/signup');
-    }
+        var errors = req.validationErrors();
 
-    var user = new User({
-      email: req.body.email,
-      password: req.body.password
+        // if email or password isn't legit...
+        if (errors) {
+          req.flash('errors', errors);
+          return res.redirect('/signup');
+        }
+
+        var email = req.body.email;
+        var password = req.body.password;
+
+        return User.getByEmail(email)
+            .then(function (result) {
+
+                if (_.has(result, 'userid')) {
+                    throw new Error('You have already signed up. Please check your email to verify your account.');
+                }
+
+                return User.create(email, password);
+            })
+            .then(function (result) {
+
+                req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
+                res.redirect('/signup');
+            })
+            .catch(function (err) {
+
+                req.flash('errors', {msg: err});
+                res.redirect('/signup');
+            });
     });
 
-    nev.createTempUser(user, function(err, newTempUser) {
-      // new user created
-      if (newTempUser) {
-        newTempUser.password = newTempUser.generateHash(newTempUser.password);
-        nev.registerTempUser(newTempUser, function(err) {
-          if (err) {
-            return next(err);
-          }
-          req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
-          res.redirect('/login');
-        });
+    // GET account page
+    app.get('/account', function(req, res) {
 
-      // user already exists in temporary collection!
-      } else {
-        req.flash('errors', {msg: 'You have already signed up. Please check your email to verify your account.'});
-        res.redirect('/signup');
-      }
-    });
-  });
+        if (!_.has(req, ['user', 'userid'])) {
+            console.log('no user id, accessed account...');
+            req.flash('errors', {msg: 'You must be logged in to view that page.'});
+            return res.redirect('/login');
+        }
 
-  // GET account page
-  app.get('/account', function(req, res) {
+        User.getById(req.user.userid)
+            .then(function (user) {
+
+                res.render('account/profile', {
+                    events: [],
+                    eventLabels: [],
+                    timeLabels: [],
+                    notifs: [],
+                    methods: []
+                });
+            })
+            .catch(function (err) {
+
+                console.log(err);
+                res.send(err);
+            });
+    /*
     User.findById(req.user.id, function(err, user) {
       var events = {},
         notifs   = {};
@@ -135,7 +162,8 @@ module.exports = function(app, nev) {
         methods: user.methods
       });
     });
-  });
+    */
+    });
 
   /**
    * POST /account/profile
@@ -170,7 +198,7 @@ module.exports = function(app, nev) {
       }
       var events = [],
         times = [];
-      
+
       for (var ev in req.body.events) {
         events.push({'event': ev});
       }
