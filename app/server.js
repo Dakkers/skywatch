@@ -10,27 +10,27 @@ var errorHandler = require('errorhandler');
 var lusca = require('lusca');
 var methodOverride = require('method-override');
 
-var MongoStore = require('connect-mongo')(session);
+var PostgresStore = require('connect-pg-simple')(session);
 var flash = require('express-flash');
 var path = require('path');
-var mongoose = require('mongoose');
 var passport = require('passport');
 var expressValidator = require('express-validator');
 var connectAssets = require('connect-assets');
 var nev = require('email-verification');
+var pg = require('pg');
+var bluebird = require('bluebird');
+var pgp = require('pg-promise')({options: {
+  promiseLib: bluebird
+}});
 
 var User = require('./models/User');
 
 // secret stuff!
 var secrets = require('./config/secrets');
+var db = pgp(secrets.db);
 
 // configuration of sorts
 var app = express();
-
-mongoose.connect(secrets.db);
-mongoose.connection.on('error', function() {
-  console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
-});
 
 app.set('port', process.env.PORT || 5000);
 app.set('views', path.join(__dirname, 'views'));
@@ -49,7 +49,11 @@ app.use(session({
   resave: true,
   saveUninitialized: true,
   secret: secrets.sessionSecret,
-  store: new MongoStore({ url: secrets.db, autoReconnect: true })
+  store: new PostgresStore({
+    pg: pg,
+    conString: secrets.db,
+    autoReconnect: true
+  })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -74,7 +78,7 @@ app.use(express.static(path.join(__dirname, '../public'), { maxAge: 31557600000 
 
 // error handler
 app.use(errorHandler());
-require('./routes/routes')(app, passport);
+require('./routes/routes')(app, passport, db);
 
 app.listen(app.get('port'), function() {
   console.log('Express server listening on port %d in %s mode', app.get('port'), app.get('env'));

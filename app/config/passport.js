@@ -1,41 +1,67 @@
 'use strict';
 
 var _ = require('lodash');
-var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var OAuthStrategy = require('passport-oauth').OAuthStrategy;
 var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
 
 var secrets = require('./secrets');
-var User = require('../models/User');
+var UserModel = require('../models/User');
 
-passport.serializeUser(function(user, done) {
-  done(null, user.id);
-});
+module.exports = function (passport, db) {
 
-passport.deserializeUser(function(id, done) {
-  User.findById(id, function(err, user) {
-    done(err, user);
-  });
-});
+    var User = UserModel(db);
 
+    passport.serializeUser(function(user, done) {
 
-// sign-in using email/password
-passport.use(new LocalStrategy({ usernameField: 'email' }, function(email, password, done) {
-  User.findOne({ email: email }, function(err, user) {
-    if (!user) {
-      return done(null, false, { message: 'Email ' + email + ' not found'});
-    }
-
-    user.comparePassword(password, function(err, isMatch) {
-      if (isMatch) {
-        return done(null, user);
-      } else {
-        return done(null, false, { message: 'Invalid email or password.' });
-      }
+        done(null, user.userid);
     });
-  });
-}));
+
+    passport.deserializeUser(function(id, done) {
+
+        User.getById(id)
+            .then(function (user) {
+
+                done(null, user);
+            })
+            .catch(function (err) {
+
+                done(err, null);
+            });
+    });
+
+    // sign-in using email/password
+    passport.use(new LocalStrategy({ usernameField: 'email' }, function (email, password, done) {
+
+        // TODO -- alternative to using vars outside of Promise scope? .bind() doesn't work.
+        var user;
+
+        User.getByEmail(email)
+            .then(function (result) {
+
+                if (!result) {
+                    throw new Error('Email ' + email + ' not found');
+                }
+
+                user = result;
+
+                return User.comparePassword(password, user.password);
+            })
+            .then(function (isMatch) {
+
+                if (isMatch) {
+                    return done(null, user);
+                }
+
+                throw new Error('Invalid password.');
+            })
+            .catch(function (err) {
+
+                console.log(err);
+
+                return done(null, false, { message: err });
+            });
+    }));
 
 /**
  * OAuth Strategy Overview
@@ -75,25 +101,33 @@ passport.use('venmo', new OAuth2Strategy({
 ));
 */
 
-/**
- * Login Required middleware.
- */
-exports.isAuthenticated = function(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.redirect('/login');
-};
+    /**
+     * Login Required middleware.
+     */
+    function isAuthenticated (req, res, next) {
 
-/**
- * Authorization Required middleware.
- */
-exports.isAuthorized = function(req, res, next) {
-  var provider = req.path.split('/').slice(-1)[0];
+        if (req.isAuthenticated()) {
+            return next();
+        }
+        return res.redirect('/login');
+    };
 
-  if (_.find(req.user.tokens, { kind: provider })) {
-    next();
-  } else {
-    res.redirect('/auth/' + provider);
-  }
+    /**
+     * Authorization Required middleware.
+     */
+    function isAuthorized (req, res, next) {
+
+        var provider = req.path.split('/').slice(-1)[0];
+
+        if (_.find(req.user.tokens, { kind: provider })) {
+            next();
+        } else {
+            res.redirect('/auth/' + provider);
+        }
+    };
+
+    return {
+        isAuthenticated: isAuthenticated,
+        isAuthorized: isAuthorized
+    };
 };
