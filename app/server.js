@@ -17,11 +17,10 @@ var passport = require('passport');
 var expressValidator = require('express-validator');
 var connectAssets = require('connect-assets');
 var nev = require('email-verification');
-var pg = require('pg');
 var bluebird = require('bluebird');
-var pgp = require('pg-promise')({options: {
+var pgp = require('pg-promise')({
   promiseLib: bluebird
-}});
+});
 
 var User = require('./models/User');
 
@@ -50,7 +49,7 @@ app.use(session({
   saveUninitialized: true,
   secret: secrets.sessionSecret,
   store: new PostgresStore({
-    pg: pg,
+    pg: pgp.pg,
     conString: secrets.db,
     autoReconnect: true
   })
