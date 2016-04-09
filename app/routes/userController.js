@@ -4,9 +4,9 @@ var _ = require('lodash');
 var async = require('async');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
-var passport = require('passport');
 var UserModel = require('../models/User');
 var secrets = require('../config/secrets');
+var jwt = require('jsonwebtoken');
 
 var eventLabels = {
   meteors: 'Meteor Showers',
@@ -22,64 +22,112 @@ var timeLabels  = {
   '24h': '24 hours'
 };
 
-module.exports = function(app, nev, db) {
+module.exports = function(app, db) {
 
     var User = UserModel(db);
 
-  // GET login page
-  app.get('/login', function(req, res) {
-    if (req.user) {
-      return res.redirect('/');
-    }
-    res.render('account/login', {title: 'Login'});
-  });
+    // GET login page
+    app.get('/login', function (req, res) {
 
-  // POST login (login attempt)
-  app.post('/login', function(req, res, next) {
-    req.assert('email', 'Email is not valid').isEmail();
-    req.assert('password', 'Password cannot be blank').notEmpty();
-
-    var errors = req.validationErrors();
-
-    if (errors) {
-      req.flash('errors', errors);
-      return res.redirect('/login');
-    }
-
-    passport.authenticate('local', function(err, user, info) {
-      if (err) {
-        req.flash('errors', {msg: err});
-        return res.redirect('/login');
-      }
-      if (!user) {
-        req.flash('errors', { msg: info.message });
-        return res.redirect('/login');
-      }
-      req.logIn(user, function(err) {
-        if (err) {
-          return next(err);
+        if (req.user) {
+            return res.redirect('/account');
         }
-        res.redirect(req.session.returnTo || '/account');
-      });
-    })(req, res, next);
-  });
 
-  // GET logout (attempt logging out)
-  app.get('/logout', function(req, res) {
-    req.logout();
-    res.redirect('/');
-  });
+        return res
+            .clearCookie('errorMessage')
+            .clearCookie('successMessage')
+            .render('account/login', {
+                title: 'Login',
+                errorMessage: req.cookies.errorMessage,
+                successMessage: req.cookies.successMessage
+            });
+    });
 
-  // GET signup page
-  app.get('/signup', function(req, res) {
-    if (req.user) {
-      return res.redirect('/');
-    }
-    res.render('account/signup', {title: 'Create Account'});
-  });
+    // POST login (login attempt)
+    app.post('/login', function (req, res, next) {
+
+        req.assert('email', 'Email is not valid').isEmail();
+        req.assert('password', 'Password cannot be blank').notEmpty();
+
+        var errors = req.validationErrors();
+
+        if (errors) {
+            return res
+                .cookie('errorMessage', _.map(errors, 'msg').join('. ') + '.')
+                .redirect('/login');
+        }
+
+        var email = req.body.email;
+
+        // TODO -- alternative to using vars outside of Promise scope? .bind() doesn't work.
+        var user;
+
+        User.getByEmail(email)
+            .then(function (result) {
+
+                if (!result) {
+                    throw new Error('Email ' + email + ' not found');
+                }
+
+                user = result;
+                return User.comparePassword(req.body.password, user.password);
+            })
+            .then(function (isMatch) {
+
+                if (isMatch) {
+                    var token = jwt.sign(
+                        {'email': user.email, 'userId': user.userid},
+                        process.env.SKYWATCH_SESSION_SECRET,
+                        {'expiresIn': '1d'}
+                    );
+
+                    return res
+                        .cookie('authorization', 'Bearer ' + token)
+                        .render('account/profile', {
+                            events: [],
+                            eventLabels: [],
+                            timeLabels: [],
+                            notifs: [],
+                            methods: [],
+                            user: user
+                        });
+                }
+
+                throw new Error('Invalid password.');
+            })
+            .catch(function (err) {
+
+                console.log(err);
+                return res
+                    .cookie('errorMessage', err.toString())
+                    .redirect('/login');
+            });
+    });
+
+    // GET logout (attempt logging out)
+    app.get('/logout', function (req, res) {
+
+        res.clearCookie('authorization').redirect('/');
+    });
+
+    // GET signup page
+    app.get('/signup', function (req, res) {
+
+        if (req.user) {
+            return res.redirect('/');
+        }
+        return res
+            .clearCookie('errorMessage')
+            .clearCookie('successMessage')
+            .render('account/signup', {
+                title: 'Create Account',
+                errorMessage: req.cookies.errorMessage,
+                successMessage: req.cookies.successMessage
+            });
+    });
 
     // POST signup (signup attempt)
-    app.post('/signup', function(req, res, next) {
+    app.post('/signup', function (req, res, next) {
 
         // uses express-validator middleware
         req.assert('email', 'Email is not valid').isEmail();
@@ -90,8 +138,9 @@ module.exports = function(app, nev, db) {
 
         // if email or password isn't legit...
         if (errors) {
-          req.flash('errors', errors);
-          return res.redirect('/signup');
+            return res
+                .cookie('errorMessage', _.map(errors, 'msg').join('. ') + '.')
+                .redirect('/signup');
         }
 
         var email = req.body.email;
@@ -108,29 +157,31 @@ module.exports = function(app, nev, db) {
             })
             .then(function (result) {
 
-                req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
-                res.redirect('/signup');
+                // req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
+                res
+                    .cookie('successMessage', 'An email has been sent to you. Please check it to verify your account.')
+                    .redirect('/login');
             })
             .catch(function (err) {
 
-                req.flash('errors', {msg: err});
+                // req.flash('errors', {msg: err});
                 res.redirect('/signup');
             });
     });
 
     // GET account page
-    app.get('/account', function(req, res) {
+    app.get('/account', function (req, res) {
 
-        if (!_.has(req, ['user', 'userid'])) {
-            console.log('no user id, accessed account...');
-            req.flash('errors', {msg: 'You must be logged in to view that page.'});
+        if (!_.has(req, ['user', 'userId'])) {
+            // req.flash('errors', {msg: 'You must be logged in to view that page.'});
             return res.redirect('/login');
         }
 
-        User.getById(req.user.userid)
+        User.getById(req.user.userId)
             .then(function (user) {
 
-                res.render('account/profile', {
+                return res.render('account/profile', {
+                    user: req.user,
                     events: [],
                     eventLabels: [],
                     timeLabels: [],
@@ -143,26 +194,6 @@ module.exports = function(app, nev, db) {
                 console.log(err);
                 res.send(err);
             });
-    /*
-    User.findById(req.user.id, function(err, user) {
-      var events = {},
-        notifs   = {};
-      user.events.forEach(function(ev) {
-        events[ev.event] = true;
-      });
-      user.notifications.forEach(function(t) {
-        notifs[t.time] = true;
-      });
-
-      res.render('account/profile', {
-        events: events,
-        eventLabels: eventLabels,
-        timeLabels: timeLabels,
-        notifs: notifs,
-        methods: user.methods
-      });
-    });
-    */
     });
 
   /**
@@ -181,7 +212,7 @@ module.exports = function(app, nev, db) {
         if (err) {
           return next(err);
         }
-        req.flash('success', { msg: 'Profile information updated.' });
+        // req.flash('success', { msg: 'Profile information updated.' });
         res.redirect('/account');
       });
     });
@@ -213,7 +244,7 @@ module.exports = function(app, nev, db) {
         if (err) {
           return next(err);
         }
-        req.flash('success', {msg: 'Notification settings updated.'});
+        // req.flash('success', {msg: 'Notification settings updated.'});
         res.redirect('/account');
       });
     });
@@ -235,7 +266,7 @@ module.exports = function(app, nev, db) {
     var errors = req.validationErrors();
 
     if (errors) {
-      req.flash('errors', errors);
+      // req.flash('errors', errors);
       return res.redirect('/account');
     }
 
@@ -250,7 +281,7 @@ module.exports = function(app, nev, db) {
         if (err) {
           return next(err);
         }
-        req.flash('success', { msg: 'Password has been changed.' });
+        // req.flash('success', { msg: 'Password has been changed.' });
         res.redirect('/account');
       });
     });
@@ -266,7 +297,7 @@ module.exports = function(app, nev, db) {
         return next(err);
       }
       req.logout();
-      req.flash('info', { msg: 'Your account has been deleted.' });
+      // req.flash('info', { msg: 'Your account has been deleted.' });
       res.redirect('/');
     });
   });
@@ -289,7 +320,7 @@ module.exports = function(app, nev, db) {
         if (err) {
           return next(err);
         }
-        req.flash('info', { msg: provider + ' account has been unlinked.' });
+        // req.flash('info', { msg: provider + ' account has been unlinked.' });
         res.redirect('/account');
       });
     });
@@ -308,7 +339,7 @@ module.exports = function(app, nev, db) {
       .where('resetPasswordExpires').gt(Date.now())
       .exec(function(err, user) {
         if (!user) {
-          req.flash('errors', { msg: 'Password reset token is invalid or has expired.' });
+          // req.flash('errors', { msg: 'Password reset token is invalid or has expired.' });
           return res.redirect('/forgot');
         }
         res.render('account/reset', {
@@ -328,7 +359,7 @@ module.exports = function(app, nev, db) {
     var errors = req.validationErrors();
 
     if (errors) {
-      req.flash('errors', errors);
+      // req.flash('errors', errors);
       return res.redirect('back');
     }
 
@@ -339,7 +370,7 @@ module.exports = function(app, nev, db) {
           .where('resetPasswordExpires').gt(Date.now())
           .exec(function(err, user) {
             if (!user) {
-              req.flash('errors', { msg: 'Password reset token is invalid or has expired.' });
+              // req.flash('errors', { msg: 'Password reset token is invalid or has expired.' });
               return res.redirect('back');
             }
 
@@ -373,7 +404,7 @@ module.exports = function(app, nev, db) {
             'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
         };
         transporter.sendMail(mailOptions, function(err) {
-          req.flash('success', { msg: 'Success! Your password has been changed.' });
+          // req.flash('success', { msg: 'Success! Your password has been changed.' });
           done(err);
         });
       }
@@ -408,7 +439,7 @@ module.exports = function(app, nev, db) {
     var errors = req.validationErrors();
 
     if (errors) {
-      req.flash('errors', errors);
+      // req.flash('errors', errors);
       return res.redirect('/forgot');
     }
 
@@ -422,7 +453,7 @@ module.exports = function(app, nev, db) {
       function(token, done) {
         User.findOne({ email: req.body.email.toLowerCase() }, function(err, user) {
           if (!user) {
-            req.flash('errors', { msg: 'No account with that email address exists.' });
+            // req.flash('errors', { msg: 'No account with that email address exists.' });
             return res.redirect('/forgot');
           }
 
@@ -452,7 +483,7 @@ module.exports = function(app, nev, db) {
             'If you did not request this, please ignore this email and your password will remain unchanged.\n'
         };
         transporter.sendMail(mailOptions, function(err) {
-          req.flash('info', { msg: 'An e-mail has been sent to ' + user.email + ' with further instructions.' });
+          // req.flash('info', { msg: 'An e-mail has been sent to ' + user.email + ' with further instructions.' });
           done(err, 'done');
         });
       }
