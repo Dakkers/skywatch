@@ -14,7 +14,6 @@ var flash = require('express-flash');
 var path = require('path');
 var expressValidator = require('express-validator');
 var connectAssets = require('connect-assets');
-var nev = require('email-verification');
 var bluebird = require('bluebird');
 var pgp = require('pg-promise')({
     promiseLib: bluebird

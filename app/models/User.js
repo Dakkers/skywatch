@@ -35,13 +35,19 @@ module.exports = function (db) {
 
         var password = bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
 
-        return db.none('INSERT INTO users (Email, Password) VALUES ($1, $2)', [email, password]);
+        return db.one('INSERT INTO users (Email, Password) VALUES ($1, $2) RETURNING UserID, Email', [email, password]);
+    }
+
+    function confirmAccount (email) {
+
+        return db.none('UPDATE users SET IsConfirmed = TRUE WHERE Email = $1', email);
     }
 
     return {
         getByEmail: getByEmail,
         getById: getById,
+        confirmAccount: confirmAccount,
         comparePassword: comparePassword,
         create: create
-    }
+    };
 };
