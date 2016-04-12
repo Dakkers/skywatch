@@ -1,6 +1,5 @@
 'use strict';
 
-var User = require('./../models/User');
 var secrets = require('./../config/secrets');
 // var apiController = require('./apiController');
 
@@ -16,12 +15,6 @@ module.exports = function(app, db) {
   });
 
   require('./userController')(app, db);
-
-  // move user from temporary collection to persistent collection
-  app.get('/email-verification/:URL', function(req, res, next) {
-
-
-  });
 
   /**
    * API examples routes.

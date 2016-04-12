@@ -3,10 +3,16 @@
 var _ = require('lodash');
 var async = require('async');
 var crypto = require('crypto');
-var nodemailer = require('nodemailer');
-var UserModel = require('../models/User');
-var secrets = require('../config/secrets');
+var EmailTemplate = require('email-templates').EmailTemplate;
 var jwt = require('jsonwebtoken');
+var nodemailer = require('nodemailer');
+var path = require('path');
+var Promise = require('bluebird');
+var sendgrid  = Promise.promisifyAll(require('sendgrid')(process.env.SKYWATCH_SENDGRID_API_KEY));
+var secrets = require('../config/secrets');
+var UserModel = require('../models/User');
+
+var verifyTemplate = new EmailTemplate(path.join(__dirname, '..', 'util', 'emailtemplates', 'verify'));
 
 var eventLabels = {
   meteors: 'Meteor Showers',
@@ -21,6 +27,30 @@ var timeLabels  = {
   '12h': '12 hours',
   '24h': '24 hours'
 };
+
+function sendVerificationEmail (user) {
+
+    var token = encodeURIComponent(jwt.sign(
+        {'email': user.email, 'userId': user.userid},
+        process.env.SKYWATCH_VERIFICATION_JWT_SECRET,
+        {'expiresIn': '1d'}
+    ));
+
+    return verifyTemplate
+        .render({
+            verificationUrl: 'http://localhost:5000/verify/' + token,
+        })
+        .then(function (result) {
+
+            return sendgrid.sendAsync({
+                to: user.email,
+                from: 'notifications@skywatch.com',
+                subject: 'Verify Your Account',
+                html: result.html,
+                text: result.text
+            });
+        });
+}
 
 module.exports = function(app, db) {
 
@@ -70,6 +100,11 @@ module.exports = function(app, db) {
                 }
 
                 user = result;
+
+                if (!user.isconfirmed) {
+                    throw new Error('You have not yet verified your account. Please click the "Resend Verification Email" link below.');
+                }
+
                 return User.comparePassword(req.body.password, user.password);
             })
             .then(function (isMatch) {
@@ -155,17 +190,21 @@ module.exports = function(app, db) {
 
                 return User.create(email, password);
             })
+            .then(function (user) {
+
+                return sendVerificationEmail(user);
+            })
             .then(function (result) {
 
-                // req.flash('success', {msg: 'An email has been sent to you. Please check it to verify your account.'});
-                res
+                return res
                     .cookie('successMessage', 'An email has been sent to you. Please check it to verify your account.')
                     .redirect('/login');
             })
             .catch(function (err) {
 
-                // req.flash('errors', {msg: err});
-                res.redirect('/signup');
+                return res
+                    .cookie('errorMessage', err.toString())
+                    .redirect('/signup');
             });
     });
 
@@ -173,8 +212,9 @@ module.exports = function(app, db) {
     app.get('/account', function (req, res) {
 
         if (!_.has(req, ['user', 'userId'])) {
-            // req.flash('errors', {msg: 'You must be logged in to view that page.'});
-            return res.redirect('/login');
+            return res
+                .cookie('errorMessage', 'You must be logged in to view that page.')
+                .redirect('/login');
         }
 
         User.getById(req.user.userId)
@@ -194,6 +234,82 @@ module.exports = function(app, db) {
                 console.log(err);
                 res.send(err);
             });
+    });
+
+    // GET account verification sender (for resending email to verify account)
+    app.get('/verify', function (req, res) {
+
+        return res.render('account/verify');
+    });
+
+    app.post('/verify', function (req, res) {
+
+        req.assert('email', 'Email is not valid').isEmail();
+
+        var errors = req.validationErrors();
+
+        if (errors) {
+            return res
+                .cookie('errorMessage', _.map(errors, 'msg').join('. ') + '.')
+                .redirect('/login');
+        }
+
+        var email = req.body.email;
+
+        User.getByEmail(email)
+            .then(function (result) {
+
+                if (!result) {
+                    throw new Error('Email ' + email + ' not found');
+                }
+
+                if (result.isconfirmed) {
+                    throw new Error('You have already verified your account.');
+                }
+
+                return sendVerificationEmail(result);
+            })
+            .then(function (result) {
+
+                return res
+                    .cookie('successMessage', 'An email has been sent to you. Please check it to verify your account.')
+                    .redirect('/login');
+            })
+            .catch(function (err) {
+
+                console.log(err);
+                return res
+                    .cookie('errorMessage', err.toString())
+                    .redirect('/login');
+            });
+    });
+
+    // GET account verification (accessed from Email)
+    app.get('/verify/:token', function (req, res) {
+
+        jwt.verify(decodeURIComponent(req.params.token), process.env.SKYWATCH_VERIFICATION_JWT_SECRET, function (err, decoded) {
+
+            if (err) {
+                return res
+                    .cookie('errorMessage', 'There was an error verifying your account.')
+                    .redirect('/login');
+            }
+
+            User.confirmAccount(decoded.email)
+                .then(function () {
+
+                    return res
+                        .cookie('successMessage', 'Your account has been verified!')
+                        .redirect('/login');
+                })
+                .catch(function (err) {
+
+                    console.log(err);
+                    return res
+                        .cookie('errorMessage', err.toString())
+                        .redirect('/login');
+                });
+        });
     });
 
   /**
@@ -420,14 +536,15 @@ module.exports = function(app, db) {
    * GET /forgot
    * Forgot Password page.
    */
-  app.get('/forgot', function(req, res) {
-    if (req.isAuthenticated()) {
-      return res.redirect('/');
-    }
-    res.render('account/forgot', {
-      title: 'Forgot Password'
+    app.get('/forgot', function (req, res) {
+
+        if (req.user) {
+            return res.redirect('/');
+        }
+        res.render('account/forgot', {
+            title: 'Forgot Password'
+        });
     });
-  });
 
   /**
    * POST /forgot
